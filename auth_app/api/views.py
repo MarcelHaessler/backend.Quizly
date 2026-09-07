@@ -1,9 +1,12 @@
+from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegistrationSerializer
+from .utils import set_auth_cookies
 
 
 class RegistrationView(APIView):
@@ -20,3 +23,31 @@ class RegistrationView(APIView):
             {'detail': 'User created successfully!'},
             status=status.HTTP_201_CREATED,
         )
+
+
+class LoginView(APIView):
+    """Validates credentials and returns JWT cookies."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        user = authenticate(
+            username=request.data.get('username'),
+            password=request.data.get('password'),
+        )
+        if user is None:
+            return Response(
+                {'detail': 'Invalid credentials'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        refresh = RefreshToken.for_user(user)
+        response = Response({
+            'detail': 'Login successfully!',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+            },
+        })
+        set_auth_cookies(response, refresh)
+        return response
