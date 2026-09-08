@@ -1,6 +1,8 @@
 import re
+from functools import lru_cache
 from pathlib import Path
 
+import whisper
 import yt_dlp
 
 
@@ -20,6 +22,7 @@ YOUTUBE_ID_PATTERN = re.compile(
     r'([A-Za-z0-9_-]{11})'
 )
 
+WHISPER_MODEL_NAME = 'base'
 
 def extract_video_id(url):
     """Returns the 11-character YouTube video id, or None if there is none."""
@@ -40,3 +43,15 @@ def download_audio(watch_url, target_dir):
     with yt_dlp.YoutubeDL(options) as ydl:
         ydl.download([watch_url])
     return Path(target_dir) / 'audio.mp3'
+
+
+@lru_cache(maxsize=1)
+def get_whisper_model():
+    """Loads the Whisper model once and keeps it in memory."""
+    return whisper.load_model(WHISPER_MODEL_NAME)
+
+
+def transcribe_audio(audio_path):
+    """Returns the spoken text of an audio file as a single string."""
+    result = get_whisper_model().transcribe(str(audio_path))
+    return result['text'].strip()
