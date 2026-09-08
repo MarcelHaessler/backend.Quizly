@@ -1,5 +1,6 @@
 import json
 import re
+import tempfile
 from functools import lru_cache
 from pathlib import Path
 
@@ -8,6 +9,8 @@ import yt_dlp
 from django.conf import settings
 from google import genai
 from google.genai import types
+
+from .models import Question, Quiz
 
 
 AUDIO_OPTIONS = {
@@ -116,3 +119,26 @@ def generate_quiz_data(transcript):
         ),
     )
     return json.loads(response.text)
+
+
+def save_quiz(owner, watch_url, data):
+    """Stores a generated quiz together with its questions."""
+    quiz = Quiz.objects.create(
+        owner=owner,
+        title=data['title'],
+        description=data['description'],
+        video_url=watch_url,
+    )
+    for item in data['questions']:
+        Question.objects.create(quiz=quiz, **item)
+    return quiz
+
+
+def create_quiz_from_url(owner, url):
+    """Runs the full pipeline and returns the stored quiz."""
+    watch_url = build_watch_url(extract_video_id(url))
+    with tempfile.TemporaryDirectory() as tmp:
+        audio_path = download_audio(watch_url, tmp)
+        transcript = transcribe_audio(audio_path)
+    data = generate_quiz_data(transcript)
+    return save_quiz(owner, watch_url, data)

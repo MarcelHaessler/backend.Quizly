@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from ..models import Question, Quiz
+from ..utils import extract_video_id
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -20,7 +21,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class QuizSerializer(serializers.ModelSerializer):
     """Serializes a quiz including its nested questions."""
-    
+
     questions = QuestionSerializer(many=True, read_only=True)
 
     class Meta:
@@ -35,3 +36,14 @@ class QuizSerializer(serializers.ModelSerializer):
             'questions',
         ]
         read_only_fields = ['video_url']
+
+
+class QuizCreateSerializer(serializers.Serializer):
+    """Validates the YouTube URL a new quiz is generated from."""
+
+    url = serializers.URLField()
+
+    def validate_url(self, value):
+        if extract_video_id(value) is None:
+            raise serializers.ValidationError('Only YouTube URLs are supported.')
+        return value
