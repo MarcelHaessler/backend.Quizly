@@ -1,6 +1,7 @@
 import json
 import re
 import tempfile
+import random
 from functools import lru_cache
 from pathlib import Path
 
@@ -109,6 +110,12 @@ def get_gemini_client():
     return genai.Client(api_key=settings.GEMINI_API_KEY)
 
 
+def shuffle_options(questions):
+    """Shuffles the options of every question so the answer moves around."""
+    for item in questions:
+        random.shuffle(item['question_options'])
+
+
 def generate_quiz_data(transcript):
     """Asks Gemini for a ten-question quiz and returns it as a dict."""
     response = get_gemini_client().models.generate_content(
@@ -119,7 +126,9 @@ def generate_quiz_data(transcript):
             response_schema=QUIZ_SCHEMA,
         ),
     )
-    return json.loads(response.text)
+    data = json.loads(response.text)
+    shuffle_options(data['questions'])
+    return data
 
 
 def save_quiz(owner, watch_url, data):
