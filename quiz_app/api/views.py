@@ -3,9 +3,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from ..models import Quiz
-from ..utils import create_quiz_from_url
+from ..utils import create_quiz_from_url, QuizGenerationError
 from .permissions import IsQuizOwner
 from .serializers import QuizCreateSerializer, QuizSerializer
+
+GENERATION_FAILED = {'detail': 'Could not generate a quiz from this video.'}
 
 
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -27,5 +29,8 @@ class QuizListCreateView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         eingabe = QuizCreateSerializer(data=request.data)
         eingabe.is_valid(raise_exception=True)
-        quiz = create_quiz_from_url(request.user, eingabe.validated_data['url'])
+        try:
+            quiz = create_quiz_from_url(request.user, eingabe.validated_data['url'])
+        except QuizGenerationError:
+            return Response(GENERATION_FAILED, status=status.HTTP_400_BAD_REQUEST)
         return Response(QuizSerializer(quiz).data, status=status.HTTP_201_CREATED)

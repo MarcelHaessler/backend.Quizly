@@ -134,11 +134,23 @@ def save_quiz(owner, watch_url, data):
     return quiz
 
 
+def fetch_transcript(watch_url):
+    """Downloads the audio of a video and returns its transcript."""
+    with tempfile.TemporaryDirectory() as tmp:
+        audio_path = download_audio(watch_url, tmp)
+        return transcribe_audio(audio_path)
+
+
 def create_quiz_from_url(owner, url):
     """Runs the full pipeline and returns the stored quiz."""
     watch_url = build_watch_url(extract_video_id(url))
-    with tempfile.TemporaryDirectory() as tmp:
-        audio_path = download_audio(watch_url, tmp)
-        transcript = transcribe_audio(audio_path)
-    data = generate_quiz_data(transcript)
+    try:
+        transcript = fetch_transcript(watch_url)
+        data = generate_quiz_data(transcript)
+    except Exception as error:
+        raise QuizGenerationError(str(error)) from error
     return save_quiz(owner, watch_url, data)
+
+
+class QuizGenerationError(Exception):
+    """Raised when a quiz cannot be generated from a video."""
