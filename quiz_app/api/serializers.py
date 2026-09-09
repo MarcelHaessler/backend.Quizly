@@ -44,6 +44,7 @@ class QuizCreateSerializer(serializers.Serializer):
     url = serializers.URLField()
 
     def validate_url(self, value):
+        """Rejects links that carry no YouTube video id."""
         if extract_video_id(value) is None:
             raise serializers.ValidationError('Only YouTube URLs are supported.')
         return value

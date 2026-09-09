@@ -20,6 +20,7 @@ class Quiz(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
+        """Shows the title in the admin panel and the shell."""
         return self.title
 
 
@@ -41,4 +42,5 @@ class Question(models.Model):
         ordering = ['id']
 
     def __str__(self):
+        """Shows the question text in the admin panel and the shell."""
         return self.question_title

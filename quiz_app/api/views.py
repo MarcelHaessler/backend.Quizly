@@ -24,9 +24,11 @@ class QuizListCreateView(generics.ListCreateAPIView):
     serializer_class = QuizSerializer
 
     def get_queryset(self):
+        """Limits the list to quizzes owned by the requesting user."""
         return Quiz.objects.filter(owner=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        """Runs the generation pipeline and answers 400 if it fails."""
         eingabe = QuizCreateSerializer(data=request.data)
         eingabe.is_valid(raise_exception=True)
         try:

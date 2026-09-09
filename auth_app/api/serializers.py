@@ -15,15 +15,18 @@ class RegistrationSerializer(serializers.ModelSerializer):
         }
 
     def validate_email(self, value):
+        """Rejects an address that another account already uses."""
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email is already in use.")
         return value
 
     def validate(self, data):
+        """Rejects the input when the two password fields differ."""
         if data['password'] != data['confirmed_password']:
             raise serializers.ValidationError({'password': 'Passwords do not match.'})
         return data
 
     def create(self, validated_data):
+        """Stores the user with a hashed password, without the confirmation."""
         validated_data.pop('confirmed_password')
         return User.objects.create_user(**validated_data)

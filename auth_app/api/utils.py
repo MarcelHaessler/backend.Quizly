@@ -27,6 +27,9 @@ def delete_auth_cookies(response):
     response.delete_cookie('refresh_token')
 
 
-def build_user_payload(user):
-    """Returns the public user fields used in the login response."""
-    return {'id': user.id, 'username': user.username, 'email': user.email}
+def build_login_payload(user):
+    """Returns the response body of a successful login."""
+    return {
+        'detail': 'Login successfully!',
+        'user': {'id': user.id, 'username': user.username, 'email': user.email},
+    }

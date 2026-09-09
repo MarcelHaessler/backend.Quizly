@@ -69,6 +69,7 @@ QUIZ_SCHEMA = {
     'required': ['title', 'description', 'questions'],
 }
 
+
 def extract_video_id(url):
     """Returns the 11-character YouTube video id, or None if there is none."""
     match = YOUTUBE_ID_PATTERN.search(url)

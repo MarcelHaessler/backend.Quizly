@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegistrationSerializer
 from .utils import (
-    build_user_payload,
+    build_login_payload,
     delete_auth_cookies,
     set_access_cookie,
     set_auth_cookies,
@@ -28,6 +28,7 @@ class RegistrationView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Creates the account or reports what was wrong with the input."""
         serializer = RegistrationSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -44,18 +45,15 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Sets both auth cookies; wrong credentials give a generic 401."""
         user = authenticate(
             username=request.data.get('username'),
             password=request.data.get('password'),
         )
         if user is None:
             return Response(INVALID_CREDENTIALS, status=status.HTTP_401_UNAUTHORIZED)
-        refresh = RefreshToken.for_user(user)
-        response = Response({
-            'detail': 'Login successfully!',
-            'user': build_user_payload(user),
-        })
-        set_auth_cookies(response, refresh)
+        response = Response(build_login_payload(user))
+        set_auth_cookies(response, RefreshToken.for_user(user))
         return response
 
 
@@ -63,6 +61,7 @@ class LogoutView(APIView):
     """Blacklists the refresh token and clears the auth cookies."""
 
     def post(self, request):
+        """Blacklists the refresh token so it cannot be used again."""
         refresh_token = request.COOKIES.get('refresh_token')
         if not refresh_token:
             return Response(INVALID_REFRESH, status=status.HTTP_401_UNAUTHORIZED)
@@ -81,6 +80,7 @@ class TokenRefreshView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Issues a new access token; a missing cookie is refused."""
         refresh_token = request.COOKIES.get('refresh_token')
         if not refresh_token:
             return Response(INVALID_REFRESH, status=status.HTTP_401_UNAUTHORIZED)
